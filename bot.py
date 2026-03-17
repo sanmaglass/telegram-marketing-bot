@@ -101,38 +101,55 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "5. Beneficio Racional"
     )
 
+from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
+
+# ... (rest of the imports and functions remain the same) ...
+
 async def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
+    if token:
+        token = token.strip()
+    
+    gemini_key = os.getenv("GEMINI_API_KEY")
+    if gemini_key:
+        os.environ["GEMINI_API_KEY"] = gemini_key.strip()
+        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
     if not token:
-        print("Error: No se encontró TELEGRAM_BOT_TOKEN en el archivo .env")
+        logging.error("No se encontró TELEGRAM_BOT_TOKEN en el archivo .env")
         return
 
+
     # Start Flask in a background thread
+    logging.info("Iniciando servidor de Health Check...")
     threading.Thread(target=run_flask, daemon=True).start()
     
-    application = ApplicationBuilder().token(token).read_timeout(30).write_timeout(30).build()
+    application = ApplicationBuilder().token(token).build()
     
-    # Handlers
-    start_handler = MessageHandler(filters.COMMAND & filters.Regex('^/start$'), start)
-    photo_handler = MessageHandler(filters.PHOTO, handle_photo)
+    # Handlers - Use CommandHandler for better reliability
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     
-    application.add_handler(start_handler)
-    application.add_handler(photo_handler)
+    logging.info("Bot iniciado y escuchando... 🚀")
     
-    print("Bot iniciado... Esperando mensajes.")
-    
-    # Use run_polling which handles its own loop or integration
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling()
-    
-    # Keep the bot running
-    while True:
-        await asyncio.sleep(10)
+    # run_polling matches the standard way to run the bot
+    # We use it inside main() which is called by asyncio.run()
+    async with application:
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+        logging.info("Polling iniciado correctamente.")
+        # Keep it alive
+        while True:
+            await asyncio.sleep(10)
 
 if __name__ == '__main__':
     try:
+        logging.info("Arrancando aplicación con asyncio.run()...")
         asyncio.run(main())
     except KeyboardInterrupt:
         pass
+    except Exception as e:
+        logging.critical(f"Error fatal al arrancar: {e}")
+
 
