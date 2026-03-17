@@ -101,23 +101,38 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "5. Beneficio Racional"
     )
 
-if __name__ == '__main__':
+async def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     if not token:
         print("Error: No se encontró TELEGRAM_BOT_TOKEN en el archivo .env")
-    else:
-        # Start Flask in a background thread
-        threading.Thread(target=run_flask, daemon=True).start()
-        
-        application = ApplicationBuilder().token(token).build()
+        return
 
-        
-        # Handlers
-        start_handler = MessageHandler(filters.COMMAND & filters.Regex('^/start$'), start)
-        photo_handler = MessageHandler(filters.PHOTO, handle_photo)
-        
-        application.add_handler(start_handler)
-        application.add_handler(photo_handler)
-        
-        print("Bot iniciado... Esperando mensajes.")
-        application.run_polling()
+    # Start Flask in a background thread
+    threading.Thread(target=run_flask, daemon=True).start()
+    
+    application = ApplicationBuilder().token(token).read_timeout(30).write_timeout(30).build()
+    
+    # Handlers
+    start_handler = MessageHandler(filters.COMMAND & filters.Regex('^/start$'), start)
+    photo_handler = MessageHandler(filters.PHOTO, handle_photo)
+    
+    application.add_handler(start_handler)
+    application.add_handler(photo_handler)
+    
+    print("Bot iniciado... Esperando mensajes.")
+    
+    # Use run_polling which handles its own loop or integration
+    await application.initialize()
+    await application.start()
+    await application.updater.start_polling()
+    
+    # Keep the bot running
+    while True:
+        await asyncio.sleep(10)
+
+if __name__ == '__main__':
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
+
