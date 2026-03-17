@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+.env
+input_product.jpg
+ad_image_*.jpg
