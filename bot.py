@@ -6,8 +6,7 @@ from flask import Flask
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 from dotenv import load_dotenv
-import google.generativeai as genai
-from ai_engine import analyze_product, generate_marketing_content, generate_marketing_image, parse_angles
+from ai_engine import analyze_product, generate_marketing_content, generate_marketing_image, parse_angles, configure_ai
 
 load_dotenv()
 
@@ -100,10 +99,8 @@ if __name__ == '__main__':
     if token:
         token = token.strip()
     
-    gemini_key = os.getenv("GEMINI_API_KEY")
-    if gemini_key:
-        os.environ["GEMINI_API_KEY"] = gemini_key.strip()
-        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+    # Configure AI once at startup
+    configure_ai()
 
     if not token:
         logging.error("No se encontró TELEGRAM_BOT_TOKEN")

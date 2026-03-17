@@ -5,9 +5,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash")
+# Configure Gemini model globally
+model = None
+
+def configure_ai():
+    """Initializes the AI engine with API keys."""
+    global model
+    api_key = os.getenv("GEMINI_API_KEY")
+    if api_key:
+        api_key = api_key.strip()
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel("gemini-1.5-flash")
+    else:
+        print("Warning: GEMINI_API_KEY not found in environment!")
+
+# For direct use if imported
+configure_ai()
+
 
 def analyze_product(image_path):
     """Analyze the product image using Gemini Vision."""
